@@ -5,7 +5,12 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +21,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -31,12 +36,21 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     private String userId;
-    private List<Poll> polls;
+    private List<Poll> polls = new ArrayList<>();
+
+    private RecyclerView polls_view;
+    private Adapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        polls_view = findViewById(R.id.polls_view);
+        adapter = new Adapter();
+
+        polls_view.setLayoutManager(new LinearLayoutManager(this));
+        polls_view.setAdapter(adapter);
 
         getOrRegisterUser();
     }
@@ -75,13 +89,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("SpeakerFeedback", "Error al rebre la llista de 'polls'");
                 return;
             }
-            polls = new ArrayList<>();
+            polls.clear();
             for (DocumentSnapshot doc : documentSnapshots) {
                 Poll poll = doc.toObject(Poll.class);
                 polls.add(poll);
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
-            // TODO: Avisar l'adaptador
+            adapter.notifyDataSetChanged();
         }
     };
 
@@ -97,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 .addSnapshotListener(this, usersListener);
 
         db.collection("rooms").document("testroom").collection("polls")
+                .orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
     }
 
@@ -156,5 +171,61 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder {
+        private CardView card_view;
+        private TextView label_view;
+        private TextView question_view;
+        private TextView options_view;
+
+        public ViewHolder(View itemView) {
+            super(itemView);
+            card_view     = itemView.findViewById(R.id.card_view);
+            label_view    = itemView.findViewById(R.id.label_view);
+            question_view = itemView.findViewById(R.id.question_view);
+            options_view  = itemView.findViewById(R.id.options_view);
+        }
+    }
+
+    class Adapter extends RecyclerView.Adapter<ViewHolder> {
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View itemView = getLayoutInflater().inflate(R.layout.poll_view, parent, false);
+            return new ViewHolder(itemView);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Poll poll = polls.get(position);
+            if (position == 0) {
+                holder.label_view.setVisibility(View.VISIBLE);
+                if (poll.isOpen()) {
+                    holder.label_view.setText("Active");
+                } else {
+                    holder.label_view.setText("Previous");
+                }
+            } else {
+                if (!poll.isOpen() && polls.get(position-1).isOpen()) {
+                    holder.label_view.setVisibility(View.VISIBLE);
+                    holder.label_view.setText("Previous");
+                } else {
+                    holder.label_view.setVisibility(View.GONE);
+                }
+            }
+            holder.card_view.setCardElevation(poll.isOpen() ? 10.0f : 0.0f);
+            if (!poll.isOpen()) {
+                holder.card_view.setCardBackgroundColor(0xFFE0E0E0);
+            }
+            holder.question_view.setText(poll.getQuestion());
+            holder.options_view.setText(poll.getOptionsAsString());
+        }
+
+        @Override
+        public int getItemCount() {
+            return polls.size();
+        }
     }
 }
