@@ -26,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REGISTER_USER = 0;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private TextView textView;
     private String userId;
     private ListenerRegistration roomRegistration;
     private ListenerRegistration usersRegistration;
@@ -35,8 +34,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        textView = findViewById(R.id.textView);
 
         getOrRegisterUser();
     }
@@ -61,11 +58,10 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             // textView.setText(String.format("Numuser: %d", documentSnapshots.size()));
-            String nomsUsuaris = "";
-            for (DocumentSnapshot doc : documentSnapshots) {
-                nomsUsuaris += doc.getString("name") + "\n";
-            }
-            textView.setText(nomsUsuaris);
+            //String nomsUsuaris = "";
+            //for (DocumentSnapshot doc : documentSnapshots) {
+            //    nomsUsuaris += doc.getString("name") + "\n";
+            //}
         }
     };
 
