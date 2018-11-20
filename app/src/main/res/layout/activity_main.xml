@@ -62,7 +62,7 @@
         android:layout_marginRight="16dp"
         android:layout_marginBottom="16dp"
         android:onClick="onAddPoll"
-        android:srcCompat="@drawable/ic_question_answer"
+        app:srcCompat="@drawable/ic_question_answer"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="@+id/polls_view"
         app:layout_constraintEnd_toEndOf="@+id/polls_view" />
