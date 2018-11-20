@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView polls_view;
     private Adapter adapter;
+    private TextView num_users_view;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         polls_view = findViewById(R.id.polls_view);
+        num_users_view = findViewById(R.id.num_users_view);
         adapter = new Adapter();
 
         polls_view.setLayoutManager(new LinearLayoutManager(this));
@@ -74,11 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("SpeakerFeedback", "Error al rebre usuaris dins d'un room", e);
                 return;
             }
-            // textView.setText(String.format("Numuser: %d", documentSnapshots.size()));
-            //String nomsUsuaris = "";
-            //for (DocumentSnapshot doc : documentSnapshots) {
-            //    nomsUsuaris += doc.getString("name") + "\n";
-            //}
+            num_users_view.setText(Integer.toString(documentSnapshots.size()));
         }
     };
 
