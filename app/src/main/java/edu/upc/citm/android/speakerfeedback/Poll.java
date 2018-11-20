@@ -38,9 +38,19 @@ public class Poll {
     public String getOptionsAsString() {
         // Així se sumen molts strings a Java
         StringBuilder b = new StringBuilder();
-        for (String opt : options) {
-            b.append(opt);
-            b.append("\n");
+        for (int i = 0; i < options.size(); i++) {
+            b.append(options.get(i));
+            if (results != null) {
+                b.append(" ");
+                if (results.get(i) == null) {
+                    b.append("0");
+                } else {
+                    b.append(results.get(i));
+                }
+            }
+            if (i < options.size()-1) {
+                b.append("\n");
+            }
         }
         return b.toString();
     }
@@ -77,7 +87,16 @@ public class Poll {
         return results;
     }
 
-    public void setResults(List<Integer> results) {
-        this.results = results;
+    public void addVote(int option) {
+        assert(results != null);
+        assert(results.get(option) != null);
+        results.set(option, results.get(option) + 1);
+    }
+
+    public void resetVotes() {
+        results = new ArrayList<>();
+        for (int i = 0; i < options.size(); i++) {
+            results.add(0);
+        }
     }
 }

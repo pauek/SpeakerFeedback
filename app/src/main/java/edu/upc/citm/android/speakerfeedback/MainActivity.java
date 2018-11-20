@@ -38,7 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private DocumentReference roomRef;
 
     private String userId;
+    private List<String> ids = new ArrayList<>();
     private List<Poll> polls = new ArrayList<>();
+    private Map<String, Poll> polls_map = new HashMap<>();
 
     private RecyclerView polls_view;
     private TextView num_users_view;
@@ -92,22 +94,56 @@ public class MainActivity extends AppCompatActivity {
             polls.clear();
             for (DocumentSnapshot doc : documentSnapshots) {
                 Poll poll = doc.toObject(Poll.class);
+                ids.add(doc.getId());
                 polls.add(poll);
+                polls_map.put(doc.getId(), poll);
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
             adapter.notifyDataSetChanged();
         }
     };
 
+    private EventListener<QuerySnapshot> votesListener = new EventListener<QuerySnapshot>() {
+        @Override
+        public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+            resetVotes();
+            for (DocumentSnapshot doc : documentSnapshots) {
+                String pollId = doc.getString("pollid");
+                long vote = doc.getLong("option");
+                Poll poll = polls_map.get(pollId);
+                if (poll == null) {
+                    Log.e("SpeakerFeedback", "Vote for non-existing poll");
+                } else if (!poll.isOpen()) {
+                    Log.e("SpeakerFeedback", "Vote for an already closed poll");
+                } else {
+                    poll.addVote((int)vote);
+                }
+            }
+            adapter.notifyDataSetChanged();
+        }
+    };
+
+    private void resetVotes() {
+        for (Poll poll : polls) {
+            poll.resetVotes();
+        }
+    }
 
     @Override
     protected void onStart() {
         super.onStart();
 
+        setUpSnapshotListeners();
+    }
+
+    private void setUpSnapshotListeners() {
         roomRef = db.collection("rooms").document("testroom");
         roomRef.addSnapshotListener(this, roomListener);
         roomRef.collection("polls").orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
+
+        roomRef.collection("votes").addSnapshotListener(this, votesListener);
+
         db.collection("users").whereEqualTo("room", "testroom")
                 .addSnapshotListener(this, usersListener);
     }
