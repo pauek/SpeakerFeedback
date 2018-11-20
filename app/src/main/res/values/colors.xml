@@ -2,7 +2,8 @@
 <resources>
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#ff9340</color>
     <color name="status_bar">#cc3f51b5</color>
     <color name="pollBackground">#f4f4f4</color>
+    <color name="card_bg">#e7e7e7</color>
 </resources>

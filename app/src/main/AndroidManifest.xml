@@ -17,6 +17,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".RegisterUserActivity"></activity>
+        <activity android:name=".NewPollActivity"></activity>
     </application>
 
 </manifest>

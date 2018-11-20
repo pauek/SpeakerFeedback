@@ -2,9 +2,9 @@ package edu.upc.citm.android.speakerfeedback;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,15 +32,17 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REGISTER_USER = 0;
+    private static final int NEW_POLL = 1;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private DocumentReference roomRef;
 
     private String userId;
     private List<Poll> polls = new ArrayList<>();
 
     private RecyclerView polls_view;
-    private Adapter adapter;
     private TextView num_users_view;
+    private Adapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,15 +104,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        db.collection("rooms").document("testroom")
-                .addSnapshotListener(this, roomListener);
-
+        roomRef = db.collection("rooms").document("testroom");
+        roomRef.addSnapshotListener(this, roomListener);
+        roomRef.collection("polls").orderBy("start", Query.Direction.DESCENDING)
+                .addSnapshotListener(this, pollsListener);
         db.collection("users").whereEqualTo("room", "testroom")
                 .addSnapshotListener(this, usersListener);
-
-        db.collection("rooms").document("testroom").collection("polls")
-                .orderBy("start", Query.Direction.DESCENDING)
-                .addSnapshotListener(this, pollsListener);
     }
 
     private void getOrRegisterUser() {
@@ -140,9 +139,27 @@ public class MainActivity extends AppCompatActivity {
                     finish();
                 }
                 break;
+
+            case NEW_POLL:
+                if (resultCode == RESULT_OK) {
+                    String question = data.getStringExtra("question");
+                    createNewPoll(question);
+                }
+                break;
+
             default:
                 super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    private void createNewPoll(String question) {
+        Poll poll = new Poll(question);
+        roomRef.collection("polls").add(poll).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(MainActivity.this, "Couldn't add poll", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void registerUser(String name) {
@@ -155,9 +172,7 @@ public class MainActivity extends AppCompatActivity {
                 // textView.setText(documentReference.getId());
                 userId = documentReference.getId();
                 SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
-                prefs.edit()
-                        .putString("userId", userId)
-                        .commit();
+                prefs.edit().putString("userId", userId).apply();
                 Log.i("SpeakerFeedback", "New user: userId = " + userId);
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -171,13 +186,18 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void onAddPoll(View view) {
+        Intent intent = new Intent(this, NewPollActivity.class);
+        startActivityForResult(intent, NEW_POLL);
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder {
         private CardView card_view;
         private TextView label_view;
         private TextView question_view;
         private TextView options_view;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
             card_view     = itemView.findViewById(R.id.card_view);
             label_view    = itemView.findViewById(R.id.label_view);
@@ -201,22 +221,22 @@ public class MainActivity extends AppCompatActivity {
             if (position == 0) {
                 holder.label_view.setVisibility(View.VISIBLE);
                 if (poll.isOpen()) {
-                    holder.label_view.setText("Active");
+                    holder.label_view.setText(R.string.active);
                 } else {
-                    holder.label_view.setText("Previous");
+                    holder.label_view.setText(R.string.previous);
                 }
             } else {
                 if (!poll.isOpen() && polls.get(position-1).isOpen()) {
                     holder.label_view.setVisibility(View.VISIBLE);
-                    holder.label_view.setText("Previous");
+                    holder.label_view.setText(R.string.previous);
                 } else {
                     holder.label_view.setVisibility(View.GONE);
                 }
             }
-            holder.card_view.setCardElevation(poll.isOpen() ? 10.0f : 0.0f);
-            if (!poll.isOpen()) {
-                holder.card_view.setCardBackgroundColor(0xFFE0E0E0);
-            }
+            float elevation = poll.isOpen() ? 10.0f : 0.0f;
+            int bg_color = getResources().getColor(poll.isOpen() ? android.R.color.white : R.color.card_bg);
+            holder.card_view.setCardElevation(elevation);
+            holder.card_view.setCardBackgroundColor(bg_color);
             holder.question_view.setText(poll.getQuestion());
             holder.options_view.setText(poll.getOptionsAsString());
         }

@@ -1,5 +1,6 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -11,6 +12,16 @@ public class Poll {
     private List<Integer> results;
 
     Poll() {}
+
+    Poll(String question) {
+        this.question = question;
+        this.options = new ArrayList<>();
+        this.options.add("yes");
+        this.options.add("no");
+        this.open = true;
+        this.start = new Date();
+    }
+
 
     public String getQuestion() {
         return question;
