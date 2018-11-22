@@ -42,10 +42,12 @@ public class Poll {
             b.append(options.get(i));
             if (results != null) {
                 b.append(" ");
-                if (results.get(i) == null) {
-                    b.append("0");
-                } else {
-                    b.append(results.get(i));
+                if (open) {
+                    if (results.get(i) == null) {
+                        b.append("0");
+                    } else {
+                        b.append(results.get(i));
+                    }
                 }
             }
             if (i < options.size()-1) {
