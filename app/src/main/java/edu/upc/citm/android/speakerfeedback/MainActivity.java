@@ -1,10 +1,12 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -95,16 +97,36 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             polls.clear();
+            boolean oneIsOpen = false;
             for (DocumentSnapshot doc : documentSnapshots) {
                 Poll poll = doc.toObject(Poll.class);
                 ids.add(doc.getId());
                 polls.add(poll);
                 polls_map.put(doc.getId(), poll);
+                if (poll.isOpen()) {
+                    oneIsOpen = true;
+                }
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
             adapter.notifyDataSetChanged();
+            if (oneIsOpen) {
+                addVotesListener();
+            } else {
+                removeVotesListener();
+            }
         }
     };
+
+    private void removeVotesListener() {
+        if (votesRegistration != null) {
+            votesRegistration.remove();
+        }
+    }
+
+    private void addVotesListener() {
+        votesRegistration = roomRef.collection("votes")
+                .addSnapshotListener(this, votesListener);
+    }
 
     private EventListener<QuerySnapshot> votesListener = new EventListener<QuerySnapshot>() {
         @Override
@@ -143,7 +165,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
         setUpSnapshotListeners();
     }
 
@@ -152,8 +173,6 @@ public class MainActivity extends AppCompatActivity {
         roomRef.addSnapshotListener(this, roomListener);
         roomRef.collection("polls").orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
-
-        votesRegistration = roomRef.collection("votes").addSnapshotListener(this, votesListener);
 
         db.collection("users").whereEqualTo("room", "testroom")
                 .addSnapshotListener(this, usersListener);
@@ -238,8 +257,40 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, NEW_POLL);
     }
 
-    public void onPollClicked(int pos) {
+    public void onPollClicked(final int pos) {
+        final Poll poll = polls.get(pos);
+        if (poll.isOpen()) {
+            new AlertDialog.Builder(this)
+                .setTitle(poll.getQuestion())
+                .setItems(new String[]{"Close Poll"}, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (which == 0) {
+                            closePoll(pos);
+                        }
+                    }
+                })
+                .create().show();
+        }
+    }
 
+    public void closePoll(int pos) {
+        String id = ids.get(pos);
+        Poll poll = polls.get(pos);
+        poll.setOpen(false);
+        db.collection("rooms").document("testroom").collection("polls").document(id)
+                .set(poll).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.i("SpeakerFeedback", "Poll saved");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("SpeakerFeedback", "Poll NOT saved", e);
+            }
+        });
+        removeVotesListener();
     }
 
     public void onClickUserList(View view) {
@@ -340,23 +391,23 @@ public class MainActivity extends AppCompatActivity {
                 holder.bar_views[i].setAlpha(poll.isOpen() ? 1.0f : 0.25f);
             }
             List<Integer> results = poll.getResults();
-            if (results != null) {
-                for (int i = 0; i < options.size(); i++) {
-                    Integer res = results.get(i);
-                    ViewGroup.LayoutParams params = holder.bar_views[i].getLayoutParams();
-                    params.width = 4;
-                    int visibility = View.GONE;
-                    if (res != null) {
-                        visibility = View.VISIBLE;
-                        params.width += 16 * (int) res;
-                        holder.count_views[i].setText(String.format("%d", results.get(i)));
-                    }
-                    holder.bar_views[i].setVisibility(visibility);
-                    holder.count_views[i].setVisibility(visibility);
-                    holder.bar_views[i].setLayoutParams(params);
+            for (int i = 0; i < options.size(); i++) {
+                Integer res = null;
+                if (results != null && i < results.size()) {
+                    res = results.get(i);
                 }
+                ViewGroup.LayoutParams params = holder.bar_views[i].getLayoutParams();
+                params.width = 4;
+                int visibility = View.GONE;
+                if (res != null) {
+                    visibility = View.VISIBLE;
+                    params.width += 16 * (int) res;
+                    holder.count_views[i].setText(String.format("%d", results.get(i)));
+                }
+                holder.bar_views[i].setVisibility(visibility);
+                holder.count_views[i].setVisibility(visibility);
+                holder.bar_views[i].setLayoutParams(params);
             }
-
         }
 
         @Override
