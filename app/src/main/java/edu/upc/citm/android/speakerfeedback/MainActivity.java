@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
@@ -47,10 +48,12 @@ public class MainActivity extends AppCompatActivity {
     private List<Poll> polls = new ArrayList<>();
     private Map<String, Poll> polls_map = new HashMap<>();
 
+    private FloatingActionButton btn_add_poll;
     private RecyclerView polls_view;
     private TextView num_users_view;
     private Adapter adapter;
     private ListenerRegistration votesRegistration;
+    private boolean thereIsAnActivePoll;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
 
         polls_view = findViewById(R.id.polls_view);
         num_users_view = findViewById(R.id.num_users_view);
+        btn_add_poll = findViewById(R.id.btn_add_poll);
+
         adapter = new Adapter();
 
         polls_view.setLayoutManager(new LinearLayoutManager(this));
@@ -98,23 +103,24 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             polls.clear();
-            boolean oneIsOpen = false;
+            thereIsAnActivePoll = false;
             for (DocumentSnapshot doc : documentSnapshots) {
                 Poll poll = doc.toObject(Poll.class);
                 ids.add(doc.getId());
                 polls.add(poll);
                 polls_map.put(doc.getId(), poll);
                 if (poll.isOpen()) {
-                    oneIsOpen = true;
+                    thereIsAnActivePoll = true;
                 }
             }
             Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
             adapter.notifyDataSetChanged();
-            if (oneIsOpen) {
+            if (thereIsAnActivePoll) {
                 addVotesListener();
             } else {
                 removeVotesListener();
             }
+            btn_add_poll.setVisibility(thereIsAnActivePoll ? View.GONE : View.VISIBLE);
         }
     };
 
