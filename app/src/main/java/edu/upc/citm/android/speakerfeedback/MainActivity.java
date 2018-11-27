@@ -3,6 +3,7 @@ package edu.upc.citm.android.speakerfeedback;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -378,12 +379,18 @@ public class MainActivity extends AppCompatActivity {
             int bg_color = getResources().getColor(poll.isOpen() ? android.R.color.white : R.color.card_bg);
             holder.card_view.setCardElevation(elevation);
             holder.card_view.setCardBackgroundColor(bg_color);
+
+            int activeColor = Color.rgb(0, 0, 0);
+            int passiveColor = Color.rgb(100, 100, 100);
+
             holder.question_view.setText(poll.getQuestion());
+            holder.question_view.setTextColor(poll.isOpen() ? activeColor : passiveColor);
 
             List<String> options = poll.getOptions();
             for (int i = 0; i < option_view_ids.length; i++) {
                 if (i < options.size()) {
                     holder.option_views[i].setText(options.get(i));
+                    holder.option_views[i].setTextColor(poll.isOpen() ? activeColor : passiveColor);
                     holder.setOptionVisibility(i, View.VISIBLE);
                 } else {
                     holder.setOptionVisibility(i, View.GONE);
