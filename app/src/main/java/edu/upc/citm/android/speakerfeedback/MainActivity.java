@@ -239,18 +239,44 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void onClickUserList(View view) {
+        Intent intent = new Intent(this, UserListActivity.class);
+        intent.putExtra("roomId", "testroom");
+        startActivity(intent);
+    }
+
+    private static final int MAX_OPTIONS = 10;
+    private static final int option_view_ids[] = { R.id.option1_view, R.id.option2_view, R.id.option3_view, R.id.option4_view, R.id.option5_view };
+    private static final int bar_view_ids[]    = { R.id.bar1_view, R.id.bar2_view, R.id.bar3_view, R.id.bar4_view, R.id.bar5_view };
+    private static final int count_view_ids[]  = { R.id.count1_view, R.id.count2_view, R.id.count3_view, R.id.count4_view, R.id.count5_view };
+
     class ViewHolder extends RecyclerView.ViewHolder {
         private CardView card_view;
         private TextView label_view;
         private TextView question_view;
-        private TextView options_view;
+        private TextView[] option_views;
+        private View[] bar_views;
+        private TextView[] count_views;
 
         ViewHolder(View itemView) {
             super(itemView);
             card_view     = itemView.findViewById(R.id.card_view);
             label_view    = itemView.findViewById(R.id.label_view);
             question_view = itemView.findViewById(R.id.question_view);
-            options_view  = itemView.findViewById(R.id.options_view);
+
+            option_views = new TextView[MAX_OPTIONS];
+            for (int i = 0; i < option_view_ids.length; i++) {
+                option_views[i] = itemView.findViewById(option_view_ids[i]);
+            }
+            bar_views = new View[MAX_OPTIONS];
+            for (int i = 0; i < bar_view_ids.length; i++) {
+                bar_views[i] = itemView.findViewById(bar_view_ids[i]);
+            }
+            count_views = new TextView[MAX_OPTIONS];
+            for (int i = 0; i < count_view_ids.length; i++) {
+                count_views[i] = itemView.findViewById(count_view_ids[i]);
+            }
+
             card_view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -258,6 +284,12 @@ public class MainActivity extends AppCompatActivity {
                     onPollClicked(pos);
                 }
             });
+        }
+
+        void setOptionVisibility(int i, int visibility) {
+            option_views[i].setVisibility(visibility);
+            bar_views[i].setVisibility(visibility);
+            count_views[i].setVisibility(visibility);
         }
     }
 
@@ -293,7 +325,34 @@ public class MainActivity extends AppCompatActivity {
             holder.card_view.setCardElevation(elevation);
             holder.card_view.setCardBackgroundColor(bg_color);
             holder.question_view.setText(poll.getQuestion());
-            holder.options_view.setText(poll.getOptionsAsString());
+
+            List<String> options = poll.getOptions();
+            for (int i = 0; i < option_view_ids.length; i++) {
+                if (i < options.size()) {
+                    holder.option_views[i].setText(options.get(i));
+                    holder.setOptionVisibility(i, View.VISIBLE);
+                } else {
+                    holder.setOptionVisibility(i, View.GONE);
+                }
+            }
+            List<Integer> results = poll.getResults();
+            if (results != null) {
+                for (int i = 0; i < options.size(); i++) {
+                    Integer res = results.get(i);
+                    ViewGroup.LayoutParams params = holder.bar_views[i].getLayoutParams();
+                    params.width = 8;
+                    int visibility = View.GONE;
+                    if (res != null) {
+                        visibility = View.VISIBLE;
+                        params.width += 16 * (int) res;
+                        holder.count_views[i].setText(String.format("%d", results.get(i)));
+                    }
+                    holder.bar_views[i].setVisibility(visibility);
+                    holder.count_views[i].setVisibility(visibility);
+                    holder.bar_views[i].setLayoutParams(params);
+                }
+            }
+
         }
 
         @Override
