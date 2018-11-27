@@ -108,15 +108,23 @@ public class MainActivity extends AppCompatActivity {
         public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
             resetVotes();
             for (DocumentSnapshot doc : documentSnapshots) {
+                if (!doc.contains("pollid")) {
+                    Log.e("SpeakerFeedback", "Vote is missing 'pollId'");
+                    return;
+                }
                 String pollId = doc.getString("pollid");
-                long vote = doc.getLong("option");
+                Long vote = doc.getLong("option");
+                if (vote == null) {
+                    Log.e("SpeakerFeedback", "Vote is missing 'option'");
+                    return;
+                }
                 Poll poll = polls_map.get(pollId);
                 if (poll == null) {
                     Log.e("SpeakerFeedback", "Vote for non-existing poll");
                 } else if (!poll.isOpen()) {
                     Log.e("SpeakerFeedback", "Vote for an already closed poll");
                 } else {
-                    poll.addVote((int)vote);
+                    poll.addVote((int)(long)vote);
                 }
             }
             adapter.notifyDataSetChanged();
@@ -227,6 +235,10 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(intent, NEW_POLL);
     }
 
+    public void onPollClicked(int pos) {
+
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder {
         private CardView card_view;
         private TextView label_view;
@@ -239,6 +251,13 @@ public class MainActivity extends AppCompatActivity {
             label_view    = itemView.findViewById(R.id.label_view);
             question_view = itemView.findViewById(R.id.question_view);
             options_view  = itemView.findViewById(R.id.options_view);
+            card_view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int pos = getAdapterPosition();
+                    onPollClicked(pos);
+                }
+            });
         }
     }
 
