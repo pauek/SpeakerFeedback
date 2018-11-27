@@ -2,6 +2,7 @@ package edu.upc.citm.android.speakerfeedback;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView polls_view;
     private TextView num_users_view;
     private Adapter adapter;
+    private ListenerRegistration votesRegistration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +109,13 @@ public class MainActivity extends AppCompatActivity {
     private EventListener<QuerySnapshot> votesListener = new EventListener<QuerySnapshot>() {
         @Override
         public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
-            resetVotes();
+            // Reset votes for the open Poll
+            for (Poll poll : polls) {
+                if (poll.isOpen()) {
+                    poll.resetVotes();
+                }
+            }
+            // Accumulate votes
             for (DocumentSnapshot doc : documentSnapshots) {
                 if (!doc.contains("pollid")) {
                     Log.e("SpeakerFeedback", "Vote is missing 'pollId'");
@@ -131,12 +140,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void resetVotes() {
-        for (Poll poll : polls) {
-            poll.resetVotes();
-        }
-    }
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -150,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
         roomRef.collection("polls").orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
 
-        roomRef.collection("votes").addSnapshotListener(this, votesListener);
+        votesRegistration = roomRef.collection("votes").addSnapshotListener(this, votesListener);
 
         db.collection("users").whereEqualTo("room", "testroom")
                 .addSnapshotListener(this, usersListener);
@@ -334,13 +337,14 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     holder.setOptionVisibility(i, View.GONE);
                 }
+                holder.bar_views[i].setAlpha(poll.isOpen() ? 1.0f : 0.25f);
             }
             List<Integer> results = poll.getResults();
             if (results != null) {
                 for (int i = 0; i < options.size(); i++) {
                     Integer res = results.get(i);
                     ViewGroup.LayoutParams params = holder.bar_views[i].getLayoutParams();
-                    params.width = 8;
+                    params.width = 4;
                     int visibility = View.GONE;
                     if (res != null) {
                         visibility = View.VISIBLE;
