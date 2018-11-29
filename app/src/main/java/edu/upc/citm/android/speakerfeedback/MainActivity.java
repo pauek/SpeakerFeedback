@@ -37,25 +37,25 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "SpeakerFeedback";
-
     private static final int REGISTER_USER = 0;
     private static final int NEW_POLL = 1;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private DocumentReference roomRef;
+    private ListenerRegistration votesRegistration;
 
     private String userId;
     private Map<String, String> users = new HashMap<>();
-    private List<String> ids = new ArrayList<>();
+    private Map<Object, String> ids = new HashMap<>();
     private List<Poll> polls = new ArrayList<>();
     private Map<String, Poll> polls_map = new HashMap<>();
+    private boolean thereIsAnActivePoll = true;
 
     private FloatingActionButton btn_add_poll;
     private RecyclerView polls_view;
     private TextView num_users_view;
     private Adapter adapter;
-    private ListenerRegistration votesRegistration;
-    private boolean thereIsAnActivePoll = true;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
             for (DocumentSnapshot doc : documentSnapshots) {
                 try {
                     Poll poll = doc.toObject(Poll.class);
-                    ids.add(doc.getId());
+                    ids.put(poll, doc.getId());
                     polls.add(poll);
                     polls_map.put(doc.getId(), poll);
                     if (poll.isOpen()) {
@@ -328,10 +328,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void deletePoll(final int pos) {
-        final String question = polls.get(pos).getQuestion();
-        final String id = ids.get(pos);
+        final Poll poll = polls.get(pos);
+        final String pollId = ids.get(poll);
+        final String question = poll.getQuestion();
         db.collection("rooms").document("testroom")
-          .collection("polls").document(ids.get(pos))
+          .collection("polls").document(pollId)
           .delete().addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
@@ -340,17 +341,17 @@ public class MainActivity extends AppCompatActivity {
         }).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Log.i(TAG, String.format("Delete poll '%s' ('%s')", question, id));
+                Log.i(TAG, String.format("Delete poll '%s' ('%s')", question, pollId));
             }
         });
     }
 
     public void closePoll(int pos) {
-        String id = ids.get(pos);
-        Poll poll = polls.get(pos);
+        final Poll poll = polls.get(pos);
+        final String pollId = ids.get(poll);
         poll.setOpen(false);
         poll.setOpen(false);
-        db.collection("rooms").document("testroom").collection("polls").document(id)
+        db.collection("rooms").document("testroom").collection("polls").document(pollId)
                 .set(poll).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
@@ -436,7 +437,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Poll poll = polls.get(position);
+            final Poll poll = polls.get(position);
+            final String pollId = ids.get(poll);
             if (position == 0) {
                 holder.label_view.setVisibility(View.VISIBLE);
                 if (poll.isOpen()) {
@@ -477,7 +479,7 @@ public class MainActivity extends AppCompatActivity {
             List<Integer> results = poll.getResults();
             int size = (options == null ? 0 : options.size());
             if (size > MAX_OPTIONS) {
-                Log.e(TAG, String.format("Poll (%s) has more options than the maximum!", ids.get(position)));
+                Log.e(TAG, String.format("Poll (%s) has more options than the maximum!", pollId));
                 size = MAX_OPTIONS;
             }
             for (int i = 0; i < size; i++) {
