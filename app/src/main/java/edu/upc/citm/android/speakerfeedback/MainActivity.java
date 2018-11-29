@@ -4,7 +4,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -249,7 +248,8 @@ public class MainActivity extends AppCompatActivity {
             case NEW_POLL:
                 if (resultCode == RESULT_OK) {
                     String question = data.getStringExtra("question");
-                    createNewPoll(question);
+                    List<String> options = data.getStringArrayListExtra("options");
+                    createNewPoll(question, options);
                 }
                 break;
 
@@ -258,11 +258,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void createNewPoll(String question) {
-        Poll poll = new Poll(question);
+    private void createNewPoll(String question, List<String> options) {
+        Poll poll = new Poll(question, options);
         roomRef.collection("polls").add(poll).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
+                Log.e(TAG, "Error adding poll: " + e.toString());
                 Toast.makeText(MainActivity.this, "Couldn't add poll", Toast.LENGTH_SHORT).show();
             }
         });
@@ -313,37 +314,70 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    static private String[] isOpenOptions = { "DeletePoll" };
+    static private String[] isClosedOptions = { "Reopen Poll", "Delete Poll" };
+
     public void onPollLongClicked(final int pos) {
+        final Poll poll = polls.get(pos);
+        final String[] options = (poll.isOpen() ? isOpenOptions : isClosedOptions);
         new AlertDialog.Builder(this)
-                .setMessage(getString(R.string.delete_poll_question, polls.get(pos).getQuestion()))
-                .setTitle(R.string.confirmation)
-                .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        deletePoll(pos);
+            .setTitle(poll.getQuestion())
+            .setItems(options, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (options[which] == "Reopen Poll") {
+                        reopenPoll(pos);
+                    } else if (options[which] == "Delete Poll") {
+                        maybeDeletePoll(pos);
                     }
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .create().show();
+                }
+            }).create().show();
+    }
+
+    private void reopenPoll(int pos) {
+        final Poll poll = polls.get(pos);
+        final String pollId = ids.get(poll);
+        roomRef.collection("polls").document(pollId).update("open", true)
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.e(TAG, "Error reopening poll: " + e.toString());
+                }
+            });
+    }
+
+    public void maybeDeletePoll(final int pos) {
+        new AlertDialog.Builder(this)
+            .setMessage(getString(R.string.delete_poll_question, polls.get(pos).getQuestion()))
+            .setTitle(R.string.confirmation)
+            .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    deletePoll(pos);
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .create().show();
+
     }
 
     private void deletePoll(final int pos) {
         final Poll poll = polls.get(pos);
         final String pollId = ids.get(poll);
         final String question = poll.getQuestion();
-        db.collection("rooms").document("testroom")
-          .collection("polls").document(pollId)
-          .delete().addOnFailureListener(new OnFailureListener() {
+        roomRef.collection("polls").document(pollId).delete()
+            .addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Error deleting poll: " + e.toString());
-            }
-        }).addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
+                }
+            })
+            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
                 Log.i(TAG, String.format("Delete poll '%s' ('%s')", question, pollId));
-            }
-        });
+                }
+            });
     }
 
     public void closePoll(int pos) {
@@ -351,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
         final String pollId = ids.get(poll);
         poll.setOpen(false);
         poll.setOpen(false);
-        db.collection("rooms").document("testroom").collection("polls").document(pollId)
+        roomRef.collection("polls").document(pollId)
                 .set(poll).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {

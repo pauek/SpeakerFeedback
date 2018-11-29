@@ -23,10 +23,19 @@ public class Poll {
     Poll() {}
 
     Poll(String question) {
+        List<String> options = new ArrayList<>();
+        options.add("yes");
+        options.add("no");
+        init(question, options);
+    }
+
+    Poll(String question, List<String> options) {
+        init(question, options);
+    }
+
+    private void init(String question, List<String> options) {
         this.question = question;
-        this.options = new ArrayList<>();
-        this.options.add("yes");
-        this.options.add("no");
+        this.options = options;
         this.open = true;
         this.start = new Date();
     }

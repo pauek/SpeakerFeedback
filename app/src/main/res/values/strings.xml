@@ -8,4 +8,7 @@
     <string name="delete_poll_question">Are you sure you want to delete poll \'%s\'?</string>
     <string name="confirmation">Confirmation</string>
     <string name="delete">Delete</string>
+    <string name="options">Options</string>
+    <string name="add_option">Add Option</string>
+    <string name="save">Save</string>
 </resources>
