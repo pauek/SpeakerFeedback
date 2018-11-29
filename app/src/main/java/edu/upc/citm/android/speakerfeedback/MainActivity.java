@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    public static final String TAG = "SpeakerFeedback";
 
     private static final int REGISTER_USER = 0;
     private static final int NEW_POLL = 1;
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private DocumentReference roomRef;
 
     private String userId;
+    private Map<String, String> users = new HashMap<>();
     private List<String> ids = new ArrayList<>();
     private List<Poll> polls = new ArrayList<>();
     private Map<String, Poll> polls_map = new HashMap<>();
@@ -53,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView num_users_view;
     private Adapter adapter;
     private ListenerRegistration votesRegistration;
-    private boolean thereIsAnActivePoll;
+    private boolean thereIsAnActivePoll = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
             if (e != null) {
-                Log.e("SpeakerFeedback", "Error al rebre rooms/testroom", e);
+                Log.e(TAG, "Error al rebre rooms/testroom", e);
                 return;
             }
             String name = documentSnapshot.getString("name");
@@ -100,8 +102,12 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
             if (e != null) {
-                Log.e("SpeakerFeedback", "Error al rebre usuaris dins d'un room", e);
+                Log.e(TAG, "Error al rebre usuaris dins d'un room", e);
                 return;
+            }
+            users.clear();
+            for (DocumentSnapshot doc : documentSnapshots) {
+                users.put(doc.getId(), doc.getString("name"));
             }
             num_users_view.setText(Integer.toString(documentSnapshots.size()));
         }
@@ -110,8 +116,9 @@ public class MainActivity extends AppCompatActivity {
     private EventListener<QuerySnapshot> pollsListener = new EventListener<QuerySnapshot>() {
         @Override
         public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
+            Log.i(TAG, "Received poll list");
             if (e != null) {
-                Log.e("SpeakerFeedback", "Error al rebre la llista de 'polls'");
+                Log.e(TAG, "Error al rebre la llista de 'polls'");
                 return;
             }
             polls.clear();
@@ -125,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                     thereIsAnActivePoll = true;
                 }
             }
-            Log.i("SpeakerFeedback", String.format("He carregat %d polls.", polls.size()));
+            Log.i(TAG, String.format("He carregat %d polls.", polls.size()));
             adapter.notifyDataSetChanged();
             if (thereIsAnActivePoll) {
                 addVotesListener();
@@ -138,11 +145,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void removeVotesListener() {
         if (votesRegistration != null) {
+            Log.i(TAG, "Removed votes listener.");
             votesRegistration.remove();
         }
     }
 
     private void addVotesListener() {
+        Log.i(TAG, "Added votes listener.");
         votesRegistration = roomRef.collection("votes")
                 .addSnapshotListener(this, votesListener);
     }
@@ -158,21 +167,26 @@ public class MainActivity extends AppCompatActivity {
             }
             // Accumulate votes
             for (DocumentSnapshot doc : documentSnapshots) {
+                final String voteId = doc.getId();
+                String username = users.get(voteId);
+                if (username == null) {
+                    username = "<unknown>";
+                }
                 if (!doc.contains("pollid")) {
-                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is missing 'pollid'", doc.getId()));
-                    return;
+                    Log.e(TAG, String.format("Vote by '%s' (%s) is missing 'pollid'", username, doc.getId()));
+                    continue;
                 }
                 String pollId = doc.getString("pollid");
                 Long vote = doc.getLong("option");
                 if (vote == null) {
-                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is missing 'option' (poll %s)", doc.getId(), pollId));
-                    return;
+                    Log.e(TAG, String.format("Vote by '%s' (%s) is missing 'option' (poll %s)", username, voteId, pollId));
+                    continue;
                 }
                 Poll poll = polls_map.get(pollId);
                 if (poll == null) {
-                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is for a non-existing poll (%s)", doc.getId(), pollId));
+                    Log.e(TAG, String.format("Vote by '%s' (%s) is for a non-existing poll (%s)", username, doc.getId(), pollId));
                 } else if (!poll.isOpen()) {
-                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is for an already closed poll (%s)", doc.getId(), pollId));
+                    Log.e(TAG, String.format("Vote by '%s' (%s) is for an already closed poll (%s)", username, doc.getId(), pollId));
                 } else {
                     poll.addVote((int)(long)vote);
                 }
@@ -208,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Encara t'has de registrar", Toast.LENGTH_SHORT).show();
         } else {
             // Ja està registrat, mostrem el id al Log
-            Log.i("SpeakerFeedback", "userId = " + userId);
+            Log.i(TAG, "userId = " + userId);
         }
     }
 
@@ -258,12 +272,12 @@ public class MainActivity extends AppCompatActivity {
                 userId = documentReference.getId();
                 SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
                 prefs.edit().putString("userId", userId).apply();
-                Log.i("SpeakerFeedback", "New user: userId = " + userId);
+                Log.i(TAG, "New user: userId = " + userId);
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e("SpeakerFeedback", "Error creant objecte", e);
+                Log.e(TAG, "Error creant objecte", e);
                 Toast.makeText(MainActivity.this,
                         "No s'ha pogut registrar l'usuari, intenta-ho més tard", Toast.LENGTH_SHORT).show();
                 finish();
@@ -301,12 +315,12 @@ public class MainActivity extends AppCompatActivity {
                 .set(poll).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Log.i("SpeakerFeedback", "Poll saved");
+                Log.i(TAG, "Poll saved");
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e("SpeakerFeedback", "Poll NOT saved", e);
+                Log.e(TAG, "Poll NOT saved", e);
             }
         });
         removeVotesListener();
@@ -318,7 +332,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private static final int MAX_OPTIONS = 10;
+    private static final int MAX_OPTIONS = 5;
     private static final int option_view_ids[] = { R.id.option1_view, R.id.option2_view, R.id.option3_view, R.id.option4_view, R.id.option5_view };
     private static final int bar_view_ids[]    = { R.id.bar1_view, R.id.bar2_view, R.id.bar3_view, R.id.bar4_view, R.id.bar5_view };
     private static final int count_view_ids[]  = { R.id.count1_view, R.id.count2_view, R.id.count3_view, R.id.count4_view, R.id.count5_view };
@@ -416,7 +430,12 @@ public class MainActivity extends AppCompatActivity {
                 holder.bar_views[i].setAlpha(poll.isOpen() ? 1.0f : 0.25f);
             }
             List<Integer> results = poll.getResults();
-            for (int i = 0; i < options.size(); i++) {
+            int size = options.size();
+            if (size > MAX_OPTIONS) {
+                Log.e(TAG, String.format("Poll (%s) has more options than the maximum!", ids.get(position)));
+                size = MAX_OPTIONS;
+            }
+            for (int i = 0; i < size; i++) {
                 Integer res = null;
                 if (results != null && i < results.size()) {
                     res = results.get(i);
