@@ -70,6 +70,18 @@ public class MainActivity extends AppCompatActivity {
         polls_view.setAdapter(adapter);
 
         getOrRegisterUser();
+        startFirestoreListenerService();
+    }
+
+    private void startFirestoreListenerService() {
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        intent.putExtra("room", "testroom");
+        startService(intent);
+    }
+
+    private void stopFirestoreListenerService() {
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        stopService(intent);
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
@@ -147,20 +159,20 @@ public class MainActivity extends AppCompatActivity {
             // Accumulate votes
             for (DocumentSnapshot doc : documentSnapshots) {
                 if (!doc.contains("pollid")) {
-                    Log.e("SpeakerFeedback", "Vote is missing 'pollId'");
+                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is missing 'pollid'", doc.getId()));
                     return;
                 }
                 String pollId = doc.getString("pollid");
                 Long vote = doc.getLong("option");
                 if (vote == null) {
-                    Log.e("SpeakerFeedback", "Vote is missing 'option'");
+                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is missing 'option' (poll %s)", doc.getId(), pollId));
                     return;
                 }
                 Poll poll = polls_map.get(pollId);
                 if (poll == null) {
-                    Log.e("SpeakerFeedback", "Vote for non-existing poll");
+                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is for a non-existing poll (%s)", doc.getId(), pollId));
                 } else if (!poll.isOpen()) {
-                    Log.e("SpeakerFeedback", "Vote for an already closed poll");
+                    Log.e("SpeakerFeedback", String.format("Vote by '%s' is for an already closed poll (%s)", doc.getId(), pollId));
                 } else {
                     poll.addVote((int)(long)vote);
                 }

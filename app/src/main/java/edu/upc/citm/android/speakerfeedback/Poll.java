@@ -1,5 +1,7 @@
 package edu.upc.citm.android.speakerfeedback;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,8 +93,11 @@ public class Poll {
 
     public void addVote(int option) {
         assert(results != null);
-        assert(results.get(option) != null);
-        results.set(option, results.get(option) + 1);
+        if (option < results.size()) {
+            results.set(option, results.get(option) + 1);
+        } else {
+            Log.e("SpeakerFeedback", "Error en el vot: opció fora de rang!");
+        }
     }
 
     public void resetVotes() {
