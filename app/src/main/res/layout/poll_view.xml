@@ -111,6 +111,18 @@
                 app:layout_constraintTop_toBottomOf="@+id/option4_view"
                 tools:text="fiu" />
 
+            <TextView
+                android:id="@+id/option6_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/option5_view"
+                tools:text="opop" />
+
 
             <android.support.constraint.Barrier
                 android:id="@+id/barrier"
@@ -175,6 +187,17 @@
                 app:layout_constraintLeft_toRightOf="@id/barrier"
                 />
 
+            <View
+                android:id="@+id/bar6_view"
+                android:layout_width="4dp"
+                android:layout_height="16dp"
+                android:layout_marginLeft="10dp"
+                android:background="@color/brown"
+                app:layout_constraintTop_toTopOf="@id/option6_view"
+                app:layout_constraintBottom_toBottomOf="@id/option6_view"
+                app:layout_constraintLeft_toRightOf="@id/barrier"
+                />
+
 
             <TextView
                 android:id="@+id/count1_view"
@@ -234,6 +257,18 @@
                 android:textSize="12sp"
                 app:layout_constraintLeft_toRightOf="@id/bar5_view"
                 app:layout_constraintBaseline_toBaselineOf="@id/option5_view"
+                tools:text="0" />
+
+            <TextView
+                android:id="@+id/count6_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp"
+                app:layout_constraintLeft_toRightOf="@id/bar6_view"
+                app:layout_constraintBaseline_toBaselineOf="@id/option6_view"
                 tools:text="0" />
 
 

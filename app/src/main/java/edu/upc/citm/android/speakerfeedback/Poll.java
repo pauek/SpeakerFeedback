@@ -13,6 +13,13 @@ public class Poll {
     private Date start, end;
     private List<Integer> results;
 
+    static Poll errorPoll(String message) {
+        Poll poll = new Poll();
+        poll.question = "Error: " + message;
+        poll.open = false;
+        return poll;
+    }
+
     Poll() {}
 
     Poll(String question) {
@@ -23,7 +30,6 @@ public class Poll {
         this.open = true;
         this.start = new Date();
     }
-
 
     public String getQuestion() {
         return question;

@@ -5,4 +5,7 @@
     <string name="add_poll">Add Poll</string>
     <string name="active">Active</string>
     <string name="previous">Previous</string>
+    <string name="delete_poll_question">Are you sure you want to delete poll \'%s\'?</string>
+    <string name="confirmation">Confirmation</string>
+    <string name="delete">Delete</string>
 </resources>

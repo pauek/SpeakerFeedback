@@ -122,23 +122,30 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             polls.clear();
-            thereIsAnActivePoll = false;
+            int activePolls = 0;
             for (DocumentSnapshot doc : documentSnapshots) {
-                Poll poll = doc.toObject(Poll.class);
-                ids.add(doc.getId());
-                polls.add(poll);
-                polls_map.put(doc.getId(), poll);
-                if (poll.isOpen()) {
-                    thereIsAnActivePoll = true;
+                try {
+                    Poll poll = doc.toObject(Poll.class);
+                    ids.add(doc.getId());
+                    polls.add(poll);
+                    polls_map.put(doc.getId(), poll);
+                    if (poll.isOpen()) {
+                        activePolls++;
+                    }
+                } catch (RuntimeException err) {
+                    String msg = String.format("Converison failed for id '%s'", doc.getId());
+                    polls.add(Poll.errorPoll(msg));
+                    Log.e(TAG, msg);
                 }
             }
-            Log.i(TAG, String.format("He carregat %d polls.", polls.size()));
-            adapter.notifyDataSetChanged();
+            thereIsAnActivePoll = (activePolls > 0);
             if (thereIsAnActivePoll) {
                 addVotesListener();
             } else {
                 removeVotesListener();
             }
+            Log.i(TAG, String.format("Loaded %d polls (%d active)", polls.size(), activePolls));
+            adapter.notifyDataSetChanged();
             btn_add_poll.setVisibility(thereIsAnActivePoll ? View.GONE : View.VISIBLE);
         }
     };
@@ -302,14 +309,46 @@ public class MainActivity extends AppCompatActivity {
                             closePoll(pos);
                         }
                     }
-                })
-                .create().show();
+                }).create().show();
         }
+    }
+
+    public void onPollLongClicked(final int pos) {
+        new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.delete_poll_question, polls.get(pos).getQuestion()))
+                .setTitle(R.string.confirmation)
+                .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        deletePoll(pos);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create().show();
+    }
+
+    private void deletePoll(final int pos) {
+        final String question = polls.get(pos).getQuestion();
+        final String id = ids.get(pos);
+        db.collection("rooms").document("testroom")
+          .collection("polls").document(ids.get(pos))
+          .delete().addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e(TAG, "Error deleting poll: " + e.toString());
+            }
+        }).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.i(TAG, String.format("Delete poll '%s' ('%s')", question, id));
+            }
+        });
     }
 
     public void closePoll(int pos) {
         String id = ids.get(pos);
         Poll poll = polls.get(pos);
+        poll.setOpen(false);
         poll.setOpen(false);
         db.collection("rooms").document("testroom").collection("polls").document(id)
                 .set(poll).addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -332,10 +371,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private static final int MAX_OPTIONS = 5;
-    private static final int option_view_ids[] = { R.id.option1_view, R.id.option2_view, R.id.option3_view, R.id.option4_view, R.id.option5_view };
-    private static final int bar_view_ids[]    = { R.id.bar1_view, R.id.bar2_view, R.id.bar3_view, R.id.bar4_view, R.id.bar5_view };
-    private static final int count_view_ids[]  = { R.id.count1_view, R.id.count2_view, R.id.count3_view, R.id.count4_view, R.id.count5_view };
+    private static final int MAX_OPTIONS = 6;
+    private static final int option_view_ids[] = { R.id.option1_view, R.id.option2_view, R.id.option3_view, R.id.option4_view, R.id.option5_view, R.id.option6_view };
+    private static final int bar_view_ids[]    = { R.id.bar1_view, R.id.bar2_view, R.id.bar3_view, R.id.bar4_view, R.id.bar5_view, R.id.bar6_view };
+    private static final int count_view_ids[]  = { R.id.count1_view, R.id.count2_view, R.id.count3_view, R.id.count4_view, R.id.count5_view, R.id.count6_view };
 
     class ViewHolder extends RecyclerView.ViewHolder {
         private CardView card_view;
@@ -367,8 +406,14 @@ public class MainActivity extends AppCompatActivity {
             card_view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int pos = getAdapterPosition();
-                    onPollClicked(pos);
+                    onPollClicked(getAdapterPosition());
+                }
+            });
+            card_view.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    onPollLongClicked(getAdapterPosition());
+                    return true;
                 }
             });
         }
@@ -420,7 +465,7 @@ public class MainActivity extends AppCompatActivity {
 
             List<String> options = poll.getOptions();
             for (int i = 0; i < option_view_ids.length; i++) {
-                if (i < options.size()) {
+                if (options != null && i < options.size()) {
                     holder.option_views[i].setText(options.get(i));
                     holder.option_views[i].setTextColor(poll.isOpen() ? activeColor : passiveColor);
                     holder.setOptionVisibility(i, View.VISIBLE);
@@ -430,7 +475,7 @@ public class MainActivity extends AppCompatActivity {
                 holder.bar_views[i].setAlpha(poll.isOpen() ? 1.0f : 0.25f);
             }
             List<Integer> results = poll.getResults();
-            int size = options.size();
+            int size = (options == null ? 0 : options.size());
             if (size > MAX_OPTIONS) {
                 Log.e(TAG, String.format("Poll (%s) has more options than the maximum!", ids.get(position)));
                 size = MAX_OPTIONS;
