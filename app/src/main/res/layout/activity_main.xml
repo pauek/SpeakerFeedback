@@ -17,12 +17,13 @@
 
     <View
         android:id="@+id/userlist_click_zone"
-        android:layout_width="60dp"
+        android:layout_width="0dp"
         android:layout_height="40dp"
         android:background="?android:attr/selectableItemBackground"
         android:onClick="onClickUserList"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/status_bar"
+        app:layout_constraintEnd_toEndOf="@id/status_bar"
+        app:layout_constraintStart_toStartOf="@id/num_users_view"
         />
 
     <ImageView
@@ -43,13 +44,14 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="2dp"
         android:layout_marginRight="2dp"
+        android:paddingLeft="12dp"
         android:textColor="@android:color/white"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="@id/status_bar"
         app:layout_constraintEnd_toStartOf="@+id/users_icon"
         app:layout_constraintTop_toTopOf="@id/status_bar"
         app:layout_constraintVertical_bias="0.476"
-        tools:text="13" />
+        tools:text="12345" />
 
     <TextView
         android:id="@+id/room_id_view"
