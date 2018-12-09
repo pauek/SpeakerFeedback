@@ -44,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private ListenerRegistration votesRegistration;
 
     private String userId;
+    private String roomId = "testroom";
+
     private Map<String, String> users = new HashMap<>();
     private Map<Object, String> ids = new HashMap<>();
     private List<Poll> polls = new ArrayList<>();
@@ -76,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startFirestoreListenerService() {
         Intent intent = new Intent(this, FirestoreListenerService.class);
-        intent.putExtra("room", "testroom");
+        intent.putExtra("room", roomId);
         startService(intent);
     }
 
@@ -89,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onEvent(DocumentSnapshot documentSnapshot, FirebaseFirestoreException e) {
             if (e != null) {
-                Log.e(TAG, "Error al rebre rooms/testroom", e);
+                Log.e(TAG, String.format("Error al rebre rooms/%s", roomId), e);
                 return;
             }
             String name = documentSnapshot.getString("name");
@@ -208,12 +210,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpSnapshotListeners() {
-        roomRef = db.collection("rooms").document("testroom");
+        roomRef = db.collection("rooms").document(roomId);
         roomRef.addSnapshotListener(this, roomListener);
         roomRef.collection("polls").orderBy("start", Query.Direction.DESCENDING)
                 .addSnapshotListener(this, pollsListener);
 
-        db.collection("users").whereEqualTo("room", "testroom")
+        db.collection("users").whereEqualTo("room", roomId)
                 .addSnapshotListener(this, usersListener);
     }
 
@@ -402,7 +404,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickUserList(View view) {
         Intent intent = new Intent(this, UserListActivity.class);
-        intent.putExtra("roomId", "testroom");
+        intent.putExtra("roomId", roomId);
         startActivity(intent);
     }
 
