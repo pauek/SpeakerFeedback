@@ -96,6 +96,7 @@ public class NewPollActivity extends AppCompatActivity {
             if (options.indexOf(option) == -1) {
                 options.add(option);
                 adapter.notifyDataSetChanged();
+                edit_option.getText().clear();
             }
         }
     }
