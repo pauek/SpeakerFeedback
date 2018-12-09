@@ -59,7 +59,7 @@ public class ChooseRoomActivity extends AppCompatActivity {
     }
 
     private void onRoomClick(int pos) {
-        Toast.makeText(this, "Clicked room " + pos, Toast.LENGTH_SHORT).show();
+
     }
 
     class Adapter extends RecyclerView.Adapter<ViewHolder> {
@@ -79,7 +79,7 @@ public class ChooseRoomActivity extends AppCompatActivity {
                 holder.add_room_view.setVisibility(View.VISIBLE);
                 holder.room_id_view.setVisibility(View.GONE);
                 holder.card_view.setCardElevation(0.0f);
-                holder.card_view.setCardBackgroundColor(0xffeeeeee);
+                holder.card_view.setCardBackgroundColor(getResources().getColor(R.color.add_room));
                 return;
             }
 
