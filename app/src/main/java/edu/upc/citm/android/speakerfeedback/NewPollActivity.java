@@ -91,7 +91,7 @@ public class NewPollActivity extends AppCompatActivity {
     }
 
     public void onAddOption(View view) {
-        String option = edit_option.getText().toString();
+        String option = edit_option.getText().toString().trim();
         if (!option.isEmpty()) {
             if (options.indexOf(option) == -1) {
                 options.add(option);
