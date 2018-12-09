@@ -11,10 +11,19 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:background="@color/status_bar"
-        android:onClick="onClickUserList"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <View
+        android:id="@+id/userlist_click_zone"
+        android:layout_width="60dp"
+        android:layout_height="40dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:onClick="onClickUserList"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
     <ImageView
         android:id="@+id/users_icon"

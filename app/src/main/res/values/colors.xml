@@ -7,4 +7,5 @@
     <color name="pollBackground">#f4f4f4</color>
     <color name="card_bg">#e7e7e7</color>
     <color name="brown">#987c66</color>
+    <color name="transparent">#0000</color>
 </resources>
