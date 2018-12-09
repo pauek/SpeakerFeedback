@@ -78,6 +78,10 @@ public class NewPollActivity extends AppCompatActivity {
     }
 
     public void savePoll() {
+        if (options.size() < 2) {
+            Toast.makeText(this, "Poll should have at least two options!", Toast.LENGTH_SHORT).show();
+            return;
+        }
         String question = edit_question.getText().toString();
         Intent data = new Intent();
         data.putExtra("question", question);
