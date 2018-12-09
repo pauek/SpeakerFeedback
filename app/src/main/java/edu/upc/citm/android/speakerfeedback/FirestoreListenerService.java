@@ -27,6 +27,7 @@ public class FirestoreListenerService extends Service {
 
     private boolean serviceStarted = false;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private String roomId;
 
     @Override
     public void onCreate() {
@@ -39,6 +40,8 @@ public class FirestoreListenerService extends Service {
         Log.i("SpeakerFeedback", "FirestoreListenerService.onStartCommand");
 
         if (!serviceStarted) {
+            roomId = intent.getStringExtra("roomId");
+            assert(roomId != null);
             createForegroundNotification();
             removeOldUsers();
             serviceStarted = true;
@@ -48,12 +51,12 @@ public class FirestoreListenerService extends Service {
     }
 
     private void createForegroundNotification() {
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, RoomActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
         // Crear una notificació i cridar startForeground (perquè el servei segueixi funcionant)
         Notification notification = new NotificationCompat.Builder(this, App.CHANNEL_ID)
-                .setContentTitle(String.format("Connectat a 'testroom'"))
+                .setContentTitle(getString(R.string.open_room, roomId))
                 .setSmallIcon(R.drawable.ic_message)
                 .setContentIntent(pendingIntent)
                 .build();

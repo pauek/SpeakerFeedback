@@ -11,4 +11,18 @@
     <string name="options">Options</string>
     <string name="add_option">Add Option</string>
     <string name="save">Save</string>
+    <string name="close_room">Close Room</string>
+    <string name="exit">Exit</string>
+    <string name="stay">Stay</string>
+    <string name="sure_close_room">Are you sure you want to close room \"%s\"?</string>
+    <string name="close">Close</string>
+    <string name="open_room">Room \"%s\" open</string>
+    <string name="room_name">Room Name</string>
+    <string name="no_password">No Password</string>
+    <string name="password">Password</string>
+    <string name="room_id">Room ID</string>
+    <string name="new_room_id">New Room ID</string>
+    <string name="create_room">Create Room</string>
+    <string name="delete_poll">Delete Poll</string>
+    <string name="reopen_poll">Reopen Poll</string>
 </resources>

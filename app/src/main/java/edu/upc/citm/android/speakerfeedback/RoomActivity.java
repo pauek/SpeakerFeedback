@@ -13,6 +13,8 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -23,6 +25,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -34,17 +37,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class RoomActivity extends AppCompatActivity {
     public static final String TAG = "SpeakerFeedback";
     private static final int REGISTER_USER = 0;
     private static final int NEW_POLL = 1;
+    private static final int CHOOSE_ROOM = 2;
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private DocumentReference roomRef;
     private ListenerRegistration votesRegistration;
 
-    private String userId;
-    private String roomId = "testroom";
+    private App app;
+
+    private String roomId;
 
     private Map<String, String> users = new HashMap<>();
     private Map<Object, String> ids = new HashMap<>();
@@ -63,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        app = (App) getApplicationContext();
+
         polls_view = findViewById(R.id.polls_view);
         num_users_view = findViewById(R.id.num_users_view);
         btn_add_poll = findViewById(R.id.btn_add_poll);
@@ -73,18 +80,34 @@ public class MainActivity extends AppCompatActivity {
         polls_view.setAdapter(adapter);
 
         getOrRegisterUser();
-        startFirestoreListenerService();
     }
 
-    private void startFirestoreListenerService() {
-        Intent intent = new Intent(this, FirestoreListenerService.class);
-        intent.putExtra("room", roomId);
-        startService(intent);
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (roomId != null) {
+            setUpSnapshotListeners();
+        }
     }
 
-    private void stopFirestoreListenerService() {
-        Intent intent = new Intent(this, FirestoreListenerService.class);
-        stopService(intent);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.room_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.option_exit_room:
+                askExitRoom();
+                break;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+        return true;
+
     }
 
     private EventListener<DocumentSnapshot> roomListener = new EventListener<DocumentSnapshot>() {
@@ -151,19 +174,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void removeVotesListener() {
-        if (votesRegistration != null) {
-            Log.i(TAG, "Removed votes listener.");
-            votesRegistration.remove();
-        }
-    }
-
-    private void addVotesListener() {
-        Log.i(TAG, "Added votes listener.");
-        votesRegistration = roomRef.collection("votes")
-                .addSnapshotListener(this, votesListener);
-    }
-
     private EventListener<QuerySnapshot> votesListener = new EventListener<QuerySnapshot>() {
         @Override
         public void onEvent(QuerySnapshot documentSnapshots, FirebaseFirestoreException e) {
@@ -203,11 +213,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        setUpSnapshotListeners();
-    }
 
     private void setUpSnapshotListeners() {
         roomRef = db.collection("rooms").document(roomId);
@@ -219,18 +224,41 @@ public class MainActivity extends AppCompatActivity {
                 .addSnapshotListener(this, usersListener);
     }
 
+    private void removeVotesListener() {
+        if (votesRegistration != null) {
+            Log.i(TAG, "Removed votes listener.");
+            votesRegistration.remove();
+        }
+    }
+
+    private void addVotesListener() {
+        Log.i(TAG, "Added votes listener.");
+        votesRegistration = roomRef.collection("votes")
+                .addSnapshotListener(this, votesListener);
+    }
+
+    private void startFirestoreListenerService() {
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        intent.putExtra("roomId", roomId);
+        startService(intent);
+    }
+
+    private void stopFirestoreListenerService() {
+        Intent intent = new Intent(this, FirestoreListenerService.class);
+        stopService(intent);
+    }
+
     private void getOrRegisterUser() {
         // Busquem a les preferències de l'app l'ID de l'usuari per saber si ja s'havia registrat
-        SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
-        userId = prefs.getString("userId", null);
-        if (userId == null) {
+        if (app.getSpeakerId() == null) {
             // Hem de registrar l'usuari, demanem el nom
             Intent intent = new Intent(this, RegisterUserActivity.class);
             startActivityForResult(intent, REGISTER_USER);
             Toast.makeText(this, "Encara t'has de registrar", Toast.LENGTH_SHORT).show();
         } else {
             // Ja està registrat, mostrem el id al Log
-            Log.i(TAG, "userId = " + userId);
+            Log.i(TAG, "userId = " + app.getSpeakerId());
+            getRoom();
         }
     }
 
@@ -255,6 +283,15 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
 
+            case CHOOSE_ROOM:
+                if (resultCode == RESULT_OK) {
+                    roomId = data.getStringExtra("roomId");
+                    enterRoom();
+                } else {
+                    finish();
+                }
+                break;
+
             default:
                 super.onActivityResult(requestCode, resultCode, data);
         }
@@ -266,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Error adding poll: " + e.toString());
-                Toast.makeText(MainActivity.this, "Couldn't add poll", Toast.LENGTH_SHORT).show();
+                Toast.makeText(RoomActivity.this, "Couldn't add poll", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -274,31 +311,86 @@ public class MainActivity extends AppCompatActivity {
     private void registerUser(String name) {
         Map<String, Object> fields = new HashMap<>();
         fields.put("name", name);
-        db.collection("users").add(fields).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+        db.collection("speakers").add(fields).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
             @Override
             public void onSuccess(DocumentReference documentReference) {
-                // Toast.makeText(MainActivity.this, "Success!", Toast.LENGTH_SHORT).show();
+                // Toast.makeText(RoomActivity.this, "Success!", Toast.LENGTH_SHORT).show();
                 // textView.setText(documentReference.getId());
-                userId = documentReference.getId();
-                SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
-                prefs.edit().putString("userId", userId).apply();
-                Log.i(TAG, "New user: userId = " + userId);
+                app.setSpeakerId(documentReference.getId());
+                getRoom();
+                Log.i(TAG, "New user: userId = " + app.getSpeakerId());
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 Log.e(TAG, "Error creant objecte", e);
-                Toast.makeText(MainActivity.this,
+                Toast.makeText(RoomActivity.this,
                         "No s'ha pogut registrar l'usuari, intenta-ho més tard", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
     }
 
+    private void getRoom() {
+        SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
+        roomId = prefs.getString("roomId", null);
+        if (roomId == null) {
+            Intent intent = new Intent(this, ChooseRoomActivity.class);
+            startActivityForResult(intent, CHOOSE_ROOM);
+        } else {
+            Log.i(TAG, "roomId = " + roomId);
+            enterRoom();
+        }
+    }
+
+    private void enterRoom() {
+        setUpSnapshotListeners();
+        startFirestoreListenerService();
+        db.collection("rooms").document(roomId).update("open", true).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(RoomActivity.this, "Error writing to the room!", Toast.LENGTH_SHORT).show();
+            }
+        });
+        // Save room from config
+        SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
+        prefs.edit().putString("roomId", roomId).commit();
+    }
+
+    private void exitRoom() {
+        stopFirestoreListenerService();
+        db.collection("rooms").document(roomId).update("open", FieldValue.delete()).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(RoomActivity.this, "Error writing to the room!", Toast.LENGTH_SHORT).show();
+            }
+        });
+        roomId = null;
+        // Erase room from config
+        SharedPreferences prefs = getSharedPreferences("config", MODE_PRIVATE);
+        prefs.edit().remove("roomId").commit();
+    }
+
+    private void askExitRoom() {
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.confirmation)
+            .setMessage(getString(R.string.sure_close_room, roomId))
+            .setPositiveButton(R.string.close, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    exitRoom();
+                    getRoom();
+                }
+            }).setNegativeButton(android.R.string.cancel, null)
+            .create().show();
+    }
+
     public void onAddPoll(View view) {
         Intent intent = new Intent(this, NewPollActivity.class);
         startActivityForResult(intent, NEW_POLL);
     }
+
+
 
     public void onPollClicked(final int pos) {
         final Poll poll = polls.get(pos);
@@ -314,26 +406,48 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }).create().show();
         }
+        else {
+            final String[] options = getClickedPollOptions();
+            new AlertDialog.Builder(this)
+                .setTitle(poll.getQuestion())
+                .setItems(options, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (options[which].equals(getString(R.string.reopen_poll))) {
+                            reopenPoll(pos);
+                        } else if (options[which].equals(getString(R.string.delete_poll))) {
+                            maybeDeletePoll(pos);
+                        }
+                    }
+                }).create().show();
+        }
     }
 
-    static private String[] isOpenOptions = { "DeletePoll" };
-    static private String[] isClosedOptions = { "Reopen Poll", "Delete Poll" };
+    @NonNull
+    private String[] getClickedPollOptions() {
+        // Hide reopen option if a poll is open
+        final String[] options;
+        if (isSomePollOpen()) {
+            options = new String[]{
+                getString(R.string.delete_poll)
+            };
+        } else {
+            options = new String[]{
+                getString(R.string.reopen_poll),
+                getString(R.string.delete_poll)
+            };
+        }
+        return options;
+    }
 
-    public void onPollLongClicked(final int pos) {
-        final Poll poll = polls.get(pos);
-        final String[] options = (poll.isOpen() ? isOpenOptions : isClosedOptions);
-        new AlertDialog.Builder(this)
-            .setTitle(poll.getQuestion())
-            .setItems(options, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    if (options[which] == "Reopen Poll") {
-                        reopenPoll(pos);
-                    } else if (options[which] == "Delete Poll") {
-                        maybeDeletePoll(pos);
-                    }
-                }
-            }).create().show();
+    private boolean isSomePollOpen() {
+        boolean somePollIsOpen = false;
+        for (Poll p : polls) {
+            if (p.isOpen()) {
+                somePollIsOpen = true;
+            }
+        }
+        return somePollIsOpen;
     }
 
     private void reopenPoll(int pos) {
@@ -360,7 +474,6 @@ public class MainActivity extends AppCompatActivity {
             })
             .setNegativeButton(android.R.string.cancel, null)
             .create().show();
-
     }
 
     private void deletePoll(final int pos) {
@@ -444,13 +557,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     onPollClicked(getAdapterPosition());
-                }
-            });
-            card_view.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    onPollLongClicked(getAdapterPosition());
-                    return true;
                 }
             });
         }
