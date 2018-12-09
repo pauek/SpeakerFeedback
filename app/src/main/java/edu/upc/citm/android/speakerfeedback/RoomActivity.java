@@ -59,7 +59,7 @@ public class RoomActivity extends AppCompatActivity {
 
     private FloatingActionButton btn_add_poll;
     private RecyclerView polls_view;
-    private TextView num_users_view;
+    private TextView num_users_view, room_id_view;
     private Adapter adapter;
 
 
@@ -72,6 +72,7 @@ public class RoomActivity extends AppCompatActivity {
 
         polls_view = findViewById(R.id.polls_view);
         num_users_view = findViewById(R.id.num_users_view);
+        room_id_view = findViewById(R.id.room_id_view);
         btn_add_poll = findViewById(R.id.btn_add_poll);
 
         adapter = new Adapter();
@@ -257,7 +258,7 @@ public class RoomActivity extends AppCompatActivity {
             Toast.makeText(this, "Encara t'has de registrar", Toast.LENGTH_SHORT).show();
         } else {
             // Ja està registrat, mostrem el id al Log
-            Log.i(TAG, "userId = " + app.getSpeakerId());
+            Log.i(TAG, "speakerId = " + app.getSpeakerId());
             getRoom();
         }
     }
@@ -318,7 +319,7 @@ public class RoomActivity extends AppCompatActivity {
                 // textView.setText(documentReference.getId());
                 app.setSpeakerId(documentReference.getId());
                 getRoom();
-                Log.i(TAG, "New user: userId = " + app.getSpeakerId());
+                Log.i(TAG, "New Speaker: speakerId = " + app.getSpeakerId());
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -344,6 +345,7 @@ public class RoomActivity extends AppCompatActivity {
     }
 
     private void enterRoom() {
+        room_id_view.setText(roomId);
         setUpSnapshotListeners();
         startFirestoreListenerService();
         db.collection("rooms").document(roomId).update("open", true).addOnFailureListener(new OnFailureListener() {
