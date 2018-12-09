@@ -11,15 +11,17 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".MainActivity" android:launchMode="singleTask">
+        <activity android:name=".ChooseRoomActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".MainActivity" android:launchMode="singleTask" />
         <activity android:name=".RegisterUserActivity" />
         <activity android:name=".NewPollActivity" />
-        <activity android:name=".UserListActivity"></activity>
+        <activity android:name=".UserListActivity" />
 
         <service android:name=".FirestoreListenerService" />
 
