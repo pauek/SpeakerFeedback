@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 class Room {
     private String id;

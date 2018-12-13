@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -17,6 +17,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import edu.upc.citm.android.speakerfeedback.speaker.R;
 
 public class NewRoomActivity extends AppCompatActivity {
 

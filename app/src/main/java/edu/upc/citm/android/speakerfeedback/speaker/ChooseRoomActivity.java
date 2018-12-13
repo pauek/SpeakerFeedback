@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -11,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -21,6 +20,8 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import edu.upc.citm.android.speakerfeedback.speaker.R;
 
 public class ChooseRoomActivity extends AppCompatActivity {
 

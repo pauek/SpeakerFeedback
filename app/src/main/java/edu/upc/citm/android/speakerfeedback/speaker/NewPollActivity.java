@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,7 +13,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
+
+import edu.upc.citm.android.speakerfeedback.speaker.R;
 
 public class NewPollActivity extends AppCompatActivity {
 

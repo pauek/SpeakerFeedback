@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import edu.upc.citm.android.speakerfeedback.speaker.R;
 
 public class RoomActivity extends AppCompatActivity {
     public static final String TAG = "SpeakerFeedback";

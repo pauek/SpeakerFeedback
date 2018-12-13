@@ -1,4 +1,4 @@
-package edu.upc.citm.android.speakerfeedback;
+package edu.upc.citm.android.speakerfeedback.speaker;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -22,6 +22,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import edu.upc.citm.android.speakerfeedback.speaker.R;
 
 public class FirestoreListenerService extends Service {
 
