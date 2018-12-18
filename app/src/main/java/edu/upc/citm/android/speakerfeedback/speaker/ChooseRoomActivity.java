@@ -21,8 +21,6 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.upc.citm.android.speakerfeedback.speaker.R;
-
 public class ChooseRoomActivity extends AppCompatActivity {
 
     private App app;

@@ -37,8 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.upc.citm.android.speakerfeedback.speaker.R;
-
 public class RoomActivity extends AppCompatActivity {
     public static final String TAG = "SpeakerFeedback";
     private static final int REGISTER_USER = 0;

@@ -14,8 +14,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import edu.upc.citm.android.speakerfeedback.speaker.R;
-
 public class NewPollActivity extends AppCompatActivity {
 
     private ArrayList<String> options;

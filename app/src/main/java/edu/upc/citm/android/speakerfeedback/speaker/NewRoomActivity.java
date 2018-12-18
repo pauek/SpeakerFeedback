@@ -18,8 +18,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.upc.citm.android.speakerfeedback.speaker.R;
-
 public class NewRoomActivity extends AppCompatActivity {
 
     private FirebaseFirestore db = FirebaseFirestore.getInstance();

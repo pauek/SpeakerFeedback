@@ -23,8 +23,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import edu.upc.citm.android.speakerfeedback.speaker.R;
-
 public class FirestoreListenerService extends Service {
 
     private boolean serviceStarted = false;
